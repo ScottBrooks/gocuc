@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -54,10 +55,27 @@ func loadWire(r *gocuc.Runner) error {
 var wireHost = flag.String("host", "127.0.0.1", "Host running cucumber")
 var wirePort = flag.Int("port", 8666, "Port cucumber is running on")
 var outputMode = flag.String("output", "dots,junit", "Output printer")
+var launchPath = flag.String("path", "", "Process to launch to run the tests with")
+var launchArgs = flag.String("args", "", "Arguments to the process we are launching")
+var launchDir = flag.String("dir", "", "Working directory to use for the launched process")
 
 func main() {
 	flag.Parse()
 	var readers []io.Reader
+
+	var cmd *exec.Cmd
+
+	if *launchPath != "" {
+		args := strings.Split(*launchArgs, ",")
+		cmd = exec.Command(*launchPath, args...)
+		cmd.Dir = *launchDir
+		log.Printf("Launching: %s", *launchPath)
+		err := cmd.Start()
+		if err != nil {
+			log.Fatal("Launch Path specifed, but unable to launch process: %s %+v %+v", *launchPath, args, err)
+		}
+		time.Sleep(time.Second)
+	}
 
 	r := gocuc.Runner{}
 
@@ -112,5 +130,18 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%d\n", endTime-startTime)
 	}
 	r.Shutdown()
+
+	if cmd != nil && cmd.Process != nil {
+		log.Printf("Killing launched process")
+		p, err := os.FindProcess(cmd.Process.Pid)
+		if p != nil {
+			p.Kill()
+			_, err = p.Wait()
+			log.Printf("Could not find launced process: %+v", err)
+		} else {
+			err = cmd.Wait()
+			log.Printf("Could not find launced process: %+v", err)
+		}
+	}
 
 }
