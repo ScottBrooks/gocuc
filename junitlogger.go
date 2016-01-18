@@ -39,6 +39,7 @@ type testSuites struct {
 	Errors   int         `xml:"errors,attr"`
 	Tests    int         `xml:"tests,attr"`
 	Suite    []testSuite `xml:"testsuite"`
+	Name     string      `xml:"name,attr"`
 }
 
 type junitLogger struct {
@@ -88,18 +89,22 @@ func (l junitLogger) Shutdown() {
 	l.w.Close()
 }
 
+func (l *junitLogger) BeginFeature(name string) {
+	l.Suites.Name = name
+}
+
 func (l *junitLogger) BeforeStep(step *gherkin.Step) {
 	l.ts = time.Now()
 }
 
 func (l junitLogger) Success(step *gherkin.Step) {
 	runTime := time.Now().Sub(l.ts)
-	l.s.TestCases = append(l.s.TestCases, testCase{Name: step.Text, Time: runTime.Seconds()})
+	l.s.TestCases = append(l.s.TestCases, testCase{Name: fmt.Sprintf("%04d: %s", len(l.s.TestCases)+1, step.Text), Time: runTime.Seconds()})
 	fmt.Printf(".")
 }
 func (l *junitLogger) Failure(step *gherkin.Step, err error) {
 	runTime := time.Now().Sub(l.ts)
-	l.s.TestCases = append(l.s.TestCases, testCase{Name: step.Text, Failed: err.Error(), Time: runTime.Seconds()})
+	l.s.TestCases = append(l.s.TestCases, testCase{Name: fmt.Sprintf("%04d: %s", len(l.s.TestCases)+1, step.Text), Failed: err.Error(), Time: runTime.Seconds()})
 }
 
 func (l *junitLogger) BeginScenario(def *gherkin.ScenarioDefinition) {

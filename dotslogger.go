@@ -18,6 +18,10 @@ func (l dotsLogger) Shutdown() {
 
 }
 
+func (l dotsLogger) BeginFeature(name string) {
+	fmt.Printf("Starting feature: %s\n", name)
+}
+
 func (l dotsLogger) BeforeStep(step *gherkin.Step) {
 }
 

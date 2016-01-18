@@ -29,6 +29,7 @@ type Runner struct {
 type logger interface {
 	Init() error
 	Shutdown()
+	BeginFeature(name string)
 	BeforeStep(step *gherkin.Step)
 	Success(step *gherkin.Step)
 	Failure(step *gherkin.Step, err error)
@@ -39,6 +40,12 @@ type logger interface {
 }
 
 type loggerSlice []logger
+
+func (loggers loggerSlice) BeginFeature(name string) {
+	for _, l := range loggers {
+		l.BeginFeature(name)
+	}
+}
 
 func (loggers loggerSlice) BeforeStep(step *gherkin.Step) {
 	for _, l := range loggers {
@@ -320,11 +327,12 @@ func (r Runner) runScenario(scenario *gherkin.Scenario) bool {
 	r.Loggers.EndScenario(&scenario.ScenarioDefinition)
 	return allStepsOk
 }
-func (r Runner) RunFeature(in io.Reader) error {
+func (r Runner) RunFeature(in io.Reader, name string) error {
 	feature, err := gherkin.ParseFeature(in)
 	if err != nil {
 		return err
 	}
+	r.Loggers.BeginFeature(name)
 
 	for _, sd := range feature.ScenarioDefinitions {
 		ok := true

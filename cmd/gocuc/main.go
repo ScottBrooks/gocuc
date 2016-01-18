@@ -59,9 +59,14 @@ var launchPath = flag.String("path", "", "Process to launch to run the tests wit
 var launchArgs = flag.String("args", "", "Arguments to the process we are launching")
 var launchDir = flag.String("dir", "", "Working directory to use for the launched process")
 
+type featureFile struct {
+	r    io.Reader
+	name string
+}
+
 func main() {
 	flag.Parse()
-	var readers []io.Reader
+	var readers []featureFile
 
 	var cmd *exec.Cmd
 
@@ -93,7 +98,7 @@ func main() {
 	r.Init()
 
 	if len(os.Args) <= 1 {
-		readers = append(readers, os.Stdin)
+		readers = append(readers, featureFile{os.Stdin, "STDIN"})
 	} else {
 		for i := range flag.Args() {
 			path := flag.Arg(i)
@@ -112,7 +117,8 @@ func main() {
 					return
 				}
 				defer file.Close()
-				readers = append(readers, file)
+				name := filepath.Base(m)
+				readers = append(readers, featureFile{file, name})
 			}
 		}
 	}
@@ -120,7 +126,7 @@ func main() {
 	startTime := time.Now().UnixNano() / 1e6
 	for i := range readers {
 		//err := GenerateAstJson(readers[i], os.Stdout, true)
-		err := r.RunFeature(readers[i])
+		err := r.RunFeature(readers[i].r, readers[i].name)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
