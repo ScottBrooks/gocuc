@@ -17,10 +17,11 @@ type testProperty struct {
 }
 
 type testCase struct {
-	Name    string  `xml:"name,attr"`
-	Skipped bool    `xml:"skipped,omitempty"`
-	Failed  string  `xml:"failure,omitempty"`
-	Time    float64 `xml:"time,attr"`
+	Name      string  `xml:"name,attr"`
+	ClassName string  `xml:"classname,attr"`
+	Skipped   bool    `xml:"skipped,omitempty"`
+	Failed    string  `xml:"failure,omitempty"`
+	Time      float64 `xml:"time,attr"`
 }
 
 type testSuite struct {
@@ -99,12 +100,12 @@ func (l *junitLogger) BeforeStep(step *gherkin.Step) {
 
 func (l junitLogger) Success(step *gherkin.Step) {
 	runTime := time.Now().Sub(l.ts)
-	l.s.TestCases = append(l.s.TestCases, testCase{Name: fmt.Sprintf("%04d: %s", len(l.s.TestCases)+1, step.Text), Time: runTime.Seconds()})
+	l.s.TestCases = append(l.s.TestCases, testCase{Name: fmt.Sprintf("%04d: %s", len(l.s.TestCases)+1, step.Text), ClassName: l.Suites.Name, Time: runTime.Seconds()})
 	fmt.Printf(".")
 }
 func (l *junitLogger) Failure(step *gherkin.Step, err error) {
 	runTime := time.Now().Sub(l.ts)
-	l.s.TestCases = append(l.s.TestCases, testCase{Name: fmt.Sprintf("%04d: %s", len(l.s.TestCases)+1, step.Text), Failed: err.Error(), Time: runTime.Seconds()})
+	l.s.TestCases = append(l.s.TestCases, testCase{Name: fmt.Sprintf("%04d: %s", len(l.s.TestCases)+1, step.Text), ClassName: l.Suites.Name, Failed: err.Error(), Time: runTime.Seconds()})
 }
 
 func (l *junitLogger) BeginScenario(def *gherkin.ScenarioDefinition) {
