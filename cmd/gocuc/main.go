@@ -54,7 +54,7 @@ func loadWire(r *gocuc.Runner) error {
 
 var wireHost = flag.String("host", "127.0.0.1", "Host running cucumber")
 var wirePort = flag.Int("port", 8666, "Port cucumber is running on")
-var outputMode = flag.String("output", "dots,junit", "Output printer")
+var outputMode = flag.String("output", "dots,junit,template", "Output printer")
 var launchPath = flag.String("path", "", "Process to launch to run the tests with")
 var launchArgs = flag.String("args", "", "Arguments to the process we are launching")
 var launchDir = flag.String("dir", "", "Working directory to use for the launched process")

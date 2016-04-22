@@ -394,6 +394,9 @@ func (r *Runner) AddLogger(name string) error {
 	case "junit":
 		r.Loggers = append(r.Loggers, &junitLogger{})
 		return nil
+	case "template":
+		r.Loggers = append(r.Loggers, &templateLogger{})
+		return nil
 	}
 
 	return fmt.Errorf("Unknown logger: %s", name)
