@@ -64,11 +64,27 @@ type featureFile struct {
 	name string
 }
 
+func destroyProcess(cmd *exec.Cmd) {
+	if cmd != nil && cmd.Process != nil {
+		log.Printf("Killing launched process")
+		p, err := os.FindProcess(cmd.Process.Pid)
+		if p != nil {
+			p.Kill()
+			_, err = p.Wait()
+			log.Printf("Could not find launced process: %+v", err)
+		} else {
+			err = cmd.Wait()
+			log.Printf("Could not find launced process: %+v", err)
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 	var readers []featureFile
 
 	var cmd *exec.Cmd
+	var timeout *time.Timer
 
 	if *launchPath != "" {
 		args := strings.Split(*launchArgs, ",")
@@ -80,8 +96,11 @@ func main() {
 			log.Fatal("Launch Path specifed, but unable to launch process: %s %+v %+v", *launchPath, args, err)
 		}
 		time.Sleep(time.Second)
+		timeout = time.AfterFunc(time.Hour, func() {
+			destroyProcess(cmd)
+			panic("THIS TEST RAN FOR AN HOUR, LETS STOP NOW")
+		})
 	}
-
 	r := gocuc.Runner{}
 
 	err := loadWire(&r)
@@ -137,17 +156,9 @@ func main() {
 	}
 	r.Shutdown()
 
-	if cmd != nil && cmd.Process != nil {
-		log.Printf("Killing launched process")
-		p, err := os.FindProcess(cmd.Process.Pid)
-		if p != nil {
-			p.Kill()
-			_, err = p.Wait()
-			log.Printf("Could not find launced process: %+v", err)
-		} else {
-			err = cmd.Wait()
-			log.Printf("Could not find launced process: %+v", err)
-		}
+	destroyProcess(cmd)
+	if timeout != nil {
+		timeout.Stop()
 	}
 
 }
